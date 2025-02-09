@@ -25,6 +25,8 @@ public class InitCommand implements ICommand {
         }
 
         synchronized (rootScope) {
+            rootScope.put("Adapter", (Object[] args) -> new GenerateAdapterCommand((Class) args[0], args[1]));
+
             rootScope.put("IoC.Scope.Current.Set", (Object[] args) -> new SetCurrentScopeCommand(args[0]));
             rootScope.put("IoC.Scope.Current.Clear", (Object[] args) -> new ClearCurrentScopeCommand());
             rootScope.put(CURRENT_SCOPE_DEPENDENCY_NAME, (Object[] args) -> Objects.isNull(currentScope.get()) ? rootScope : currentScope.get());
