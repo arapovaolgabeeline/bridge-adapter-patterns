@@ -1,11 +1,17 @@
 package org.example.commands;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.example.interfaces.ICommand;
 import org.example.interfaces.IDependency;
+import org.example.interfaces.IMovable;
 import org.example.ioc.IoC;
 import org.example.ioc.IocContextCleaner;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -57,6 +63,27 @@ class InitCommandTest {
         assertNotNull(parentScope);
         assertEquals(childScope, createdScope);
         assertNotEquals(childScope, parentScope);
+    }
+
+    @Test
+    void shouldObtainAdapterRetrievedFromIoCAndGenerateAdapter() throws IOException {
+        ICommand adapter = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
+
+        adapter.execute();
+
+        String expectedMovableAdapterFilename = "ExpectedMovableAdapter.java";
+
+        StringBuilder expectedMovableAdapter = new StringBuilder();
+        try (InputStream is = InitCommandTest.class.getClassLoader().getResourceAsStream(expectedMovableAdapterFilename);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    expectedMovableAdapter.append(line);
+                }
+            }
+
+        System.out.println(expectedMovableAdapter);
+        assertNotNull(adapter);
     }
 
     @Test
