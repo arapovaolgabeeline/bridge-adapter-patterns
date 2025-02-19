@@ -1,4 +1,4 @@
-package org.example.generated.adaptors;
+package org.example.generated.adapters;
 
 import java.util.Map;
 import java.util.Vector;
