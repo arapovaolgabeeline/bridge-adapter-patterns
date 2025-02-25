@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -83,6 +84,8 @@ class InitCommandTest {
             }
 
         System.out.println(expectedMovableAdapter);
+        IMovable movableAdapter = IoC.resolve("MovableAdapter", new Object[]{});
+        movableAdapter.setPosition(new Vector());
         assertNotNull(adapter);
     }
 
