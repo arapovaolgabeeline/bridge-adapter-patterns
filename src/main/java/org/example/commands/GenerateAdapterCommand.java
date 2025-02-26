@@ -72,7 +72,17 @@ public class GenerateAdapterCommand implements ICommand {
                     .addParameters(parameters)
                     .returns(declaredMethod.getReturnType());
 
-            methodSpec.addStatement("throw new UnsupportedOperationException()");
+            if (name.startsWith("set")) {
+                methodSpec.addStatement("((org.example.interfaces.ICommand) org.example.ioc.IoC.resolve(\"" + desiredInterface.getName() + ":" +
+                        declaredMethod.getName().substring(3).toLowerCase() +
+                        ".set\", new Object[] { obj, arg0 })).execute()", name, declaredMethod.getName());
+            } else if (name.startsWith("get")) {
+                methodSpec.addStatement("return org.example.ioc.IoC.resolve(\"" + desiredInterface.getName() + ":" +
+                        declaredMethod.getName().substring(3).toLowerCase() + ".get\", new Object[] { obj })",
+                        name, declaredMethod.getName());
+            } else {
+                methodSpec.addStatement("throw new UnsupportedOperationException()");
+            }
 
             classBuilder.addMethod(methodSpec.build());
         }

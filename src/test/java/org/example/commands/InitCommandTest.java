@@ -68,11 +68,9 @@ class InitCommandTest {
 
     @Test
     void shouldObtainAdapterRetrievedFromIoCAndGenerateAdapter() throws IOException {
-        ICommand adapter = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
-
-        adapter.execute();
-
+        IMovable movableAdapter = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
         String expectedMovableAdapterFilename = "ExpectedMovableAdapter.java";
+        IMovable movableAdapter1 = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
 
         StringBuilder expectedMovableAdapter = new StringBuilder();
         try (InputStream is = InitCommandTest.class.getClassLoader().getResourceAsStream(expectedMovableAdapterFilename);
@@ -84,9 +82,7 @@ class InitCommandTest {
             }
 
         System.out.println(expectedMovableAdapter);
-        IMovable movableAdapter = IoC.resolve("MovableAdapter", new Object[]{});
         movableAdapter.setPosition(new Vector());
-        assertNotNull(adapter);
     }
 
     @Test
