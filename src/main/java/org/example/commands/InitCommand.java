@@ -10,6 +10,8 @@ import org.example.interfaces.IDependencyResolverStrategy;
 import org.example.ioc.IoC;
 import org.example.resolvers.DependencyResolver;
 
+import static org.example.commands.GenerateAdapterCommand.DEFAULT_ADAPTER_POSTFIX;
+
 public class InitCommand implements ICommand {
     private static final ConcurrentMap<String, IDependency> rootScope = new ConcurrentHashMap<>();
     private static final String PARENT_SCOPE_DEPENDENCY_NAME = "IoC.Scope.Parent";
@@ -25,7 +27,13 @@ public class InitCommand implements ICommand {
         }
 
         synchronized (rootScope) {
-            rootScope.put("Adapter", (Object[] args) -> new GenerateAdapterCommand((Class) args[0], args[1]));
+            rootScope.put("Adapter", (Object[] args) -> {
+                GenerateAdapterCommand generateAdapterCommand = new GenerateAdapterCommand((Class) args[0], args[1]);
+                generateAdapterCommand.execute();
+                return IoC.resolve(((Class) args[0]).getSimpleName()
+                        .substring(1)
+                        .concat(DEFAULT_ADAPTER_POSTFIX), new Object[]{});
+            });
 
             rootScope.put("IoC.Scope.Current.Set", (Object[] args) -> new SetCurrentScopeCommand(args[0]));
             rootScope.put("IoC.Scope.Current.Clear", (Object[] args) -> new ClearCurrentScopeCommand());
