@@ -70,7 +70,6 @@ class InitCommandTest {
     void shouldObtainAdapterRetrievedFromIoCAndGenerateAdapter() throws IOException {
         IMovable movableAdapter = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
         String expectedMovableAdapterFilename = "ExpectedMovableAdapter.java";
-        IMovable movableAdapter1 = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
 
         StringBuilder expectedMovableAdapter = new StringBuilder();
         try (InputStream is = InitCommandTest.class.getClassLoader().getResourceAsStream(expectedMovableAdapterFilename);
@@ -81,8 +80,65 @@ class InitCommandTest {
                 }
             }
 
+        // с get у нас проблемы: они должны что-то возвращать. но через IoC.Register мы задаем команду, которая ничего не вернет. или необязательно? Можно вернуть что-то еще?
+        // да, например, так сделан IoC.Scope.Current, вот как мы его дергаем:
+        /// ConcurrentMap<String, IDependency> parentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
+
+        // org.example.interfaces.IMovable:position.get
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.get", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                return new Vector<>();
+            }
+        }})).execute();
+
+        // org.example.interfaces.IMovable:velocity.get
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:velocity.get", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                return new Vector<>();
+            }
+        }})).execute();
+
+
+        // org.example.interfaces.IMovable:position.set
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.set", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                return new ICommand() {
+                    @Override
+                    public void execute() {
+                    }
+                };
+            }
+        }})).execute();
+
         System.out.println(expectedMovableAdapter);
-        movableAdapter.setPosition(new Vector());
+
+        assertDoesNotThrow(() -> movableAdapter.setPosition(new Vector()));
+        assertDoesNotThrow(() -> movableAdapter.getPosition());
+        assertDoesNotThrow(() -> movableAdapter.getVelocity());
+
+        // мне тут осталось ошибку пофиксить, которая связана с первым запуском
+        // также подумать над пунктом 3:
+        /*
+        * interface Spaceship.Operations.IMovable
+            {
+                Vector getPosition();
+                Vector setPosition(Vector newValue);
+                Vector getVelocity();
+
+                void finish(); // для подобных методов нужна реализация
+            }
+            * а ну так там тоже будет IoC-зависимость, но как мы оттуда получим доступ к полям класса? как мы собираемся
+            * получать доступ к полям класса в getPosition и проч? хуйня какая-то
+            *
+            * а ну для полей: мы знаем филдовое название атрибута, в getPosition, например, мы в иок сам объект передаем,
+            * в новой зависимости org.example.interfaces.IMovable:position.get мы укажем, что именно из этого объекта
+            * забирать
+            *
+            * в для finish, например, можно все ассоциированные с адаптером объекты уничтожить, правильно?
+        * */
     }
 
     @Test

@@ -54,6 +54,7 @@ public class InitCommand implements ICommand {
                 }
                 return createdScope;
             });
+            // IDependency поебать что принимать и что возвращать
             rootScope.put("IoC.Register", (Object[] args) -> new RegisterDependencyCommand((String) args[0],
                     (IDependency) args[1]));
 
