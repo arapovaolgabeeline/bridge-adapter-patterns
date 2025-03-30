@@ -39,7 +39,7 @@ class InitCommandTest {
     void shouldReturnCurrentScope() {
         ConcurrentMap<String, IDependency> resolve = IoC.resolve("IoC.Scope.Current", new Object[]{});
         assertNotNull(resolve);
-        assertEquals(8, resolve.size());
+        assertEquals(9, resolve.size());
         assertTrue(resolve.containsKey("IoC.Scope.Create"));
         assertTrue(resolve.containsKey("IoC.Scope.Current"));
         assertTrue(resolve.containsKey("IoC.Scope.Current.Clear"));
@@ -158,7 +158,7 @@ class InitCommandTest {
     @Test
     void shouldNotClearRootScope() {
         ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
-        assertEquals(8, currentScope.size());
+        assertEquals(9, currentScope.size());
 
         ICommand clearScopeCommand = IoC.resolve("IoC.Scope.Current.Clear", new Object[]{currentScope});
         clearScopeCommand.execute();
