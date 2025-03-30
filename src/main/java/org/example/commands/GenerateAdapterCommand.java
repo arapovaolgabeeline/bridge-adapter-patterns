@@ -78,7 +78,7 @@ public class GenerateAdapterCommand implements ICommand {
                         ".set\", new Object[] { obj, arg0 })).execute()", name, declaredMethod.getName());
             } else if (name.startsWith("get")) {
                 methodSpec.addStatement("return org.example.ioc.IoC.resolve(\"" + desiredInterface.getName() + ":" +
-                        declaredMethod.getName().substring(3).toLowerCase() + ".get\", new Object[] { obj })",
+                                declaredMethod.getName().substring(3).toLowerCase() + ".get\", new Object[] { obj })",
                         name, declaredMethod.getName());
             } else {
                 methodSpec.addStatement("throw new UnsupportedOperationException()");
@@ -103,28 +103,47 @@ public class GenerateAdapterCommand implements ICommand {
         }
 
         ICommand resolve = IoC.resolve("IoC.Register", new Object[]{className, (IDependency) args -> {
-            try {
-                JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                File[] files = {new File(pathname.toString(), "org/example/generated/adapters/" + parameterizedTypeName)};
-                compiler.run(null, null, null, Arrays.toString(files));
-                URLClassLoader classLoader = new URLClassLoader(new URL[]{directory.toURI().toURL()});
-                Class<?> aClass = classLoader.loadClass("org.example.generated.adapters." + className);
-                Constructor<?> declaredConstructor = aClass.getConstructor(Map.class);
-                return declaredConstructor.newInstance(object);
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
+                    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            File file = new File(pathname.toString(), "org/example/generated/adapters/" + className + ".java");
+
+            int run = compiler.run(null, null, null, file.getAbsolutePath());
+
+            while (run != 0) {
+                System.out.println("waiting for " + run);
             }
-        }});
+
+            URLClassLoader classLoader = null;
+                    try {
+                        classLoader = new URLClassLoader(new URL[]{directory.toURI().toURL()});
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Class<?> aClass = null;
+
+                    // тред слипы тут не сработали
+                    try {
+                        aClass = classLoader.loadClass("org.example.generated.adapters." + className);
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Constructor<?> declaredConstructor = null;
+                    try {
+                        declaredConstructor = aClass.getConstructor(Map.class);
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        return declaredConstructor.newInstance(object);
+                    } catch (InstantiationException e) {
+                        throw new RuntimeException(e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                }}
+        );
+
         resolve.execute();
     }
 }
