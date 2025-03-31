@@ -58,6 +58,11 @@ public class InitCommand implements ICommand {
             rootScope.put("IoC.Register", (Object[] args) -> new RegisterDependencyCommand((String) args[0],
                     (IDependency) args[1]));
 
+            rootScope.put("IoC.Unregister", (Object[] args) -> {
+                ConcurrentMap<String, IDependency> currentScope = IoC.resolve(CURRENT_SCOPE_DEPENDENCY_NAME, new Object[]{});
+                return new UnregisterDependencyCommand((String) args[0], currentScope);
+            });
+
             Object[] args = new Object[1];
             args[0] = (IDependencyResolverStrategyUpdater) oldStrategy -> new IDependencyResolverStrategy() {
                 @Override

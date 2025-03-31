@@ -6,4 +6,6 @@ public interface IMovable {
     Vector getPosition();
     void setPosition(Vector newValue);
     Vector getVelocity();
+
+    void finish();
 }

@@ -80,6 +80,9 @@ public class GenerateAdapterCommand implements ICommand {
                 methodSpec.addStatement("return org.example.ioc.IoC.resolve(\"" + desiredInterface.getName() + ":" +
                                 declaredMethod.getName().substring(3).toLowerCase() + ".get\", new Object[] { obj })",
                         name, declaredMethod.getName());
+            } else if (name.equals("finish")) {
+                methodSpec.addStatement("((org.example.interfaces.ICommand) org.example.ioc.IoC.resolve(\"" +
+                        "IoC.Unregister\", new Object[] { \"" + className + "\" })).execute()", name, declaredMethod.getName());
             } else {
                 methodSpec.addStatement("throw new UnsupportedOperationException()");
             }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -15,6 +16,8 @@ import org.example.interfaces.IDependency;
 import org.example.interfaces.IMovable;
 import org.example.ioc.IoC;
 import org.example.ioc.IocContextCleaner;
+
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -88,7 +91,8 @@ class InitCommandTest {
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.get", new IDependency() {
             @Override
             public Object invoke(Object[] args) {
-                return new Vector<>();
+                Object uObject = args[0];
+                return ((Map) uObject).get("position");
             }
         }})).execute();
 
@@ -96,7 +100,8 @@ class InitCommandTest {
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:velocity.get", new IDependency() {
             @Override
             public Object invoke(Object[] args) {
-                return new Vector<>();
+                Object uObject = args[0];
+                return ((Map) uObject).get("velocity");
             }
         }})).execute();
 
@@ -108,6 +113,8 @@ class InitCommandTest {
                 return new ICommand() {
                     @Override
                     public void execute() {
+                        Object uObject = args[0];
+                        ((Map) uObject).put("position", args[1]);
                     }
                 };
             }
@@ -115,8 +122,10 @@ class InitCommandTest {
 
         System.out.println(expectedMovableAdapter);
 
-        assertDoesNotThrow(() -> movableAdapter.setPosition(new Vector()));
-        assertDoesNotThrow(() -> movableAdapter.getPosition());
+        Vector position = new Vector();
+        assertDoesNotThrow(() -> movableAdapter.setPosition(position));
+        Vector vector = assertDoesNotThrow(() -> movableAdapter.getPosition());
+        assertEquals(vector, position);
         assertDoesNotThrow(() -> movableAdapter.getVelocity());
 
         // мне тут осталось ошибку пофиксить, которая связана с первым запуском
@@ -130,15 +139,16 @@ class InitCommandTest {
 
                 void finish(); // для подобных методов нужна реализация
             }
-            * а ну так там тоже будет IoC-зависимость, но как мы оттуда получим доступ к полям класса? как мы собираемся
-            * получать доступ к полям класса в getPosition и проч? хуйня какая-то
-            *
-            * а ну для полей: мы знаем филдовое название атрибута, в getPosition, например, мы в иок сам объект передаем,
-            * в новой зависимости org.example.interfaces.IMovable:position.get мы укажем, что именно из этого объекта
-            * забирать
             *
             * в для finish, например, можно все ассоциированные с адаптером объекты уничтожить, правильно?
         * */
+
+        ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
+        assertNotNull(currentScope.get("MovableAdapter"));
+
+        movableAdapter.finish();
+
+        assertNull(currentScope.get("MovableAdapter"));
     }
 
     @Test
