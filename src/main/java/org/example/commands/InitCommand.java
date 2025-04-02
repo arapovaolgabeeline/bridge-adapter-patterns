@@ -11,6 +11,7 @@ import org.example.ioc.IoC;
 import org.example.resolvers.DependencyResolver;
 
 import static org.example.commands.GenerateAdapterCommand.DEFAULT_ADAPTER_POSTFIX;
+import static org.example.commands.GenerateAdapterCommand.createAdapterClassName;
 
 public class InitCommand implements ICommand {
     private static final ConcurrentMap<String, IDependency> rootScope = new ConcurrentHashMap<>();
@@ -30,9 +31,7 @@ public class InitCommand implements ICommand {
             rootScope.put("Adapter", (Object[] args) -> {
                 GenerateAdapterCommand generateAdapterCommand = new GenerateAdapterCommand((Class) args[0], args[1]);
                 generateAdapterCommand.execute();
-                return IoC.resolve(((Class) args[0]).getSimpleName()
-                        .substring(1)
-                        .concat(DEFAULT_ADAPTER_POSTFIX), new Object[]{});
+                return IoC.resolve(createAdapterClassName((Class) args[0]), new Object[]{});
             });
 
             rootScope.put("IoC.Scope.Current.Set", (Object[] args) -> new SetCurrentScopeCommand(args[0]));
