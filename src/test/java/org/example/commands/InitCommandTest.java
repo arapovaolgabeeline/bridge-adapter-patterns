@@ -42,7 +42,7 @@ class InitCommandTest {
     void shouldReturnCurrentScope() {
         ConcurrentMap<String, IDependency> resolve = IoC.resolve("IoC.Scope.Current", new Object[]{});
         assertNotNull(resolve);
-        assertEquals(9, resolve.size());
+        assertEquals(10, resolve.size());
         assertTrue(resolve.containsKey("IoC.Scope.Create"));
         assertTrue(resolve.containsKey("IoC.Scope.Current"));
         assertTrue(resolve.containsKey("IoC.Scope.Current.Clear"));
@@ -83,11 +83,6 @@ class InitCommandTest {
                 }
             }
 
-        // с get у нас проблемы: они должны что-то возвращать. но через IoC.Register мы задаем команду, которая ничего не вернет. или необязательно? Можно вернуть что-то еще?
-        // да, например, так сделан IoC.Scope.Current, вот как мы его дергаем:
-        /// ConcurrentMap<String, IDependency> parentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
-
-        // org.example.interfaces.IMovable:position.get
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.get", new IDependency() {
             @Override
             public Object invoke(Object[] args) {
@@ -96,7 +91,6 @@ class InitCommandTest {
             }
         }})).execute();
 
-        // org.example.interfaces.IMovable:velocity.get
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:velocity.get", new IDependency() {
             @Override
             public Object invoke(Object[] args) {
@@ -106,7 +100,6 @@ class InitCommandTest {
         }})).execute();
 
 
-        // org.example.interfaces.IMovable:position.set
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.set", new IDependency() {
             @Override
             public Object invoke(Object[] args) {
@@ -127,21 +120,6 @@ class InitCommandTest {
         Vector vector = assertDoesNotThrow(() -> movableAdapter.getPosition());
         assertEquals(vector, position);
         assertDoesNotThrow(() -> movableAdapter.getVelocity());
-
-        // мне тут осталось ошибку пофиксить, которая связана с первым запуском
-        // также подумать над пунктом 3:
-        /*
-        * interface Spaceship.Operations.IMovable
-            {
-                Vector getPosition();
-                Vector setPosition(Vector newValue);
-                Vector getVelocity();
-
-                void finish(); // для подобных методов нужна реализация
-            }
-            *
-            * в для finish, например, можно все ассоциированные с адаптером объекты уничтожить, правильно?
-        * */
 
         ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
         assertNotNull(currentScope.get("MovableAdapter"));
@@ -168,7 +146,7 @@ class InitCommandTest {
     @Test
     void shouldNotClearRootScope() {
         ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
-        assertEquals(9, currentScope.size());
+        assertEquals(10, currentScope.size());
 
         ICommand clearScopeCommand = IoC.resolve("IoC.Scope.Current.Clear", new Object[]{currentScope});
         clearScopeCommand.execute();
