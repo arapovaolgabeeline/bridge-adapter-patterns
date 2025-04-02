@@ -1,32 +1,24 @@
 package org.example.commands;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.example.interfaces.ICommand;
 import org.example.interfaces.IDependency;
 import org.example.interfaces.IMovable;
 import org.example.ioc.IoC;
 import org.example.ioc.IocContextCleaner;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class InitCommandTest {
 
@@ -70,18 +62,8 @@ class InitCommandTest {
     }
 
     @Test
-    void shouldObtainAdapterRetrievedFromIoCAndGenerateAdapter() throws IOException {
+    void shouldObtainAdapterRetrievedFromIoCAndGenerateAdapter() {
         IMovable movableAdapter = IoC.resolve("Adapter", new Object[]{IMovable.class, new HashMap<>()});
-        String expectedMovableAdapterFilename = "ExpectedMovableAdapter.java";
-
-        StringBuilder expectedMovableAdapter = new StringBuilder();
-        try (InputStream is = InitCommandTest.class.getClassLoader().getResourceAsStream(expectedMovableAdapterFilename);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    expectedMovableAdapter.append(line);
-                }
-            }
 
         ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.get", new IDependency() {
             @Override
@@ -112,8 +94,6 @@ class InitCommandTest {
                 };
             }
         }})).execute();
-
-        System.out.println(expectedMovableAdapter);
 
         Vector position = new Vector();
         assertDoesNotThrow(() -> movableAdapter.setPosition(position));

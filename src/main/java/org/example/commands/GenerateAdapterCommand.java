@@ -121,15 +121,14 @@ public class GenerateAdapterCommand implements ICommand {
                     } catch (MalformedURLException e) {
                         throw new RuntimeException(e);
                     }
-                    Class<?> aClass = null;
+                    Class<?> aClass;
 
-                    // тред слипы тут не сработали
                     try {
                         aClass = classLoader.loadClass("org.example.generated.adapters." + className);
                     } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
-                    Constructor<?> declaredConstructor = null;
+                    Constructor<?> declaredConstructor;
                     try {
                         declaredConstructor = aClass.getConstructor(Map.class);
                     } catch (NoSuchMethodException e) {
