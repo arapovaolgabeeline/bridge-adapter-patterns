@@ -7,5 +7,8 @@ public interface IMovable {
     void setPosition(Vector newValue);
     Vector getVelocity();
 
+    /**
+     * Deletes IMovable from IoC
+     * */
     void finish();
 }
