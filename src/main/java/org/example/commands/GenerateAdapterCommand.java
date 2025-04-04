@@ -124,16 +124,14 @@ public class GenerateAdapterCommand implements ICommand {
             classBuilder.addMethod(method);
         }
 
-        TypeSpec generatedClass = classBuilder.build();
-        return generatedClass;
+        return classBuilder.build();
     }
 
     private static MethodSpec createConstructor(ParameterizedTypeName parameterizedTypeName) {
         MethodSpec.Builder constructorSpec = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC);
         constructorSpec.addParameter(parameterizedTypeName, "obj")
                 .addStatement("this.obj = obj");
-        MethodSpec constructor = constructorSpec.build();
-        return constructor;
+        return constructorSpec.build();
     }
 
     private MethodSpec createMethod(Method declaredMethod, String className) {
@@ -195,4 +193,5 @@ public class GenerateAdapterCommand implements ICommand {
                 declaredMethod.getName().substring(3).toLowerCase() +
                 ".set\", new Object[] { obj, arg0 })).execute()";
     }
+
 }
