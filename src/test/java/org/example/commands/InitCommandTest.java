@@ -1,22 +1,23 @@
 package org.example.commands;
 
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.example.interfaces.ICommand;
 import org.example.interfaces.IDependency;
+import org.example.interfaces.IMovable;
 import org.example.ioc.IoC;
 import org.example.ioc.IocContextCleaner;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class InitCommandTest {
 
@@ -32,7 +33,7 @@ class InitCommandTest {
     void shouldReturnCurrentScope() {
         ConcurrentMap<String, IDependency> resolve = IoC.resolve("IoC.Scope.Current", new Object[]{});
         assertNotNull(resolve);
-        assertEquals(8, resolve.size());
+        assertEquals(10, resolve.size());
         assertTrue(resolve.containsKey("IoC.Scope.Create"));
         assertTrue(resolve.containsKey("IoC.Scope.Current"));
         assertTrue(resolve.containsKey("IoC.Scope.Current.Clear"));
@@ -60,6 +61,28 @@ class InitCommandTest {
     }
 
     @Test
+    void shouldGenerateAnapterByInterface() {
+        IMovable movableAdapter = IoC.resolve("Adapter", new Object[]{ IMovable.class, new HashMap<>() });
+
+        resolveGetPositionBean();
+        resolveSetPositionBean();
+        resolveGetVelocityBean();
+
+        Vector desiredPosition = new Vector();
+        assertDoesNotThrow(() -> movableAdapter.setPosition(desiredPosition));
+
+        Vector actualPosition = assertDoesNotThrow(() -> movableAdapter.getPosition());
+        assertEquals(desiredPosition, actualPosition);
+
+        assertDoesNotThrow(() -> movableAdapter.getVelocity());
+
+        ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
+        assertCurrentScopeHoldsAdapter(currentScope);
+        movableAdapter.finish();
+        assertCurrentScopeDoesntHoldAdapter(currentScope);
+    }
+
+    @Test
     void shouldCreateScopeWithDesiredParentScope() {
         ConcurrentMap<String, IDependency> desiredParentScope = IoC.resolve("IoC.Scope.Create", new Object[]{});
 
@@ -76,7 +99,7 @@ class InitCommandTest {
     @Test
     void shouldNotClearRootScope() {
         ConcurrentMap<String, IDependency> currentScope = IoC.resolve("IoC.Scope.Current", new Object[]{});
-        assertEquals(8, currentScope.size());
+        assertEquals(10, currentScope.size());
 
         ICommand clearScopeCommand = IoC.resolve("IoC.Scope.Current.Clear", new Object[]{currentScope});
         clearScopeCommand.execute();
@@ -166,6 +189,50 @@ class InitCommandTest {
 
         ICommand setScopeCommand = IoC.resolve("IoC.Scope.Current.Set", new Object[]{createdScope});
         setScopeCommand.execute();
+    }
+
+
+    private static void assertCurrentScopeDoesntHoldAdapter(ConcurrentMap<String, IDependency> currentScope) {
+        assertNull(currentScope.get("MovableAdapter"));
+    }
+
+    private static void assertCurrentScopeHoldsAdapter(ConcurrentMap<String, IDependency> currentScope) {
+        assertNotNull(currentScope.get("MovableAdapter"));
+    }
+
+    private static void resolveSetPositionBean() {
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.set", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                return new ICommand() {
+                    @Override
+                    public void execute() {
+                        Object uObject = args[0];
+                        ((Map) uObject).put("position", args[1]);
+                    }
+                };
+            }
+        }})).execute();
+    }
+
+    private static void resolveGetVelocityBean() {
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:velocity.get", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                Object uObject = args[0];
+                return ((Map) uObject).get("velocity");
+            }
+        }})).execute();
+    }
+
+    private static void resolveGetPositionBean() {
+        ((ICommand) IoC.resolve("IoC.Register", new Object[]{"org.example.interfaces.IMovable:position.get", new IDependency() {
+            @Override
+            public Object invoke(Object[] args) {
+                Object uObject = args[0];
+                return ((Map) uObject).get("position");
+            }
+        }})).execute();
     }
 
 }

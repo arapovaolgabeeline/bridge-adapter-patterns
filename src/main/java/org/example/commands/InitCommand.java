@@ -1,14 +1,17 @@
 package org.example.commands;
 
+import org.example.interfaces.ICommand;
+import org.example.interfaces.IDependency;
+import org.example.interfaces.IDependencyResolverStrategy;
+import org.example.interfaces.IDependencyResolverStrategyUpdater;
+import org.example.ioc.IoC;
+import org.example.resolvers.DependencyResolver;
+
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.example.interfaces.ICommand;
-import org.example.interfaces.IDependency;
-import org.example.interfaces.IDependencyResolverStrategyUpdater;
-import org.example.interfaces.IDependencyResolverStrategy;
-import org.example.ioc.IoC;
-import org.example.resolvers.DependencyResolver;
+
+import static org.example.commands.GenerateAdapterCommand.createAdapterClassName;
 
 public class InitCommand implements ICommand {
     private static final ConcurrentMap<String, IDependency> rootScope = new ConcurrentHashMap<>();
@@ -25,6 +28,11 @@ public class InitCommand implements ICommand {
         }
 
         synchronized (rootScope) {
+            rootScope.put("Adapter", (Object[] args) -> {
+                new GenerateAdapterCommand((Class) args[0], args[1]).execute();
+                return IoC.resolve(createAdapterClassName((Class) args[0]), new Object[]{});
+            });
+
             rootScope.put("IoC.Scope.Current.Set", (Object[] args) -> new SetCurrentScopeCommand(args[0]));
             rootScope.put("IoC.Scope.Current.Clear", (Object[] args) -> new ClearCurrentScopeCommand());
             rootScope.put(CURRENT_SCOPE_DEPENDENCY_NAME, (Object[] args) -> Objects.isNull(currentScope.get()) ? rootScope : currentScope.get());
@@ -44,8 +52,14 @@ public class InitCommand implements ICommand {
                 }
                 return createdScope;
             });
+
             rootScope.put("IoC.Register", (Object[] args) -> new RegisterDependencyCommand((String) args[0],
                     (IDependency) args[1]));
+
+            rootScope.put("IoC.Unregister", (Object[] args) -> {
+                ConcurrentMap<String, IDependency> currentScope = IoC.resolve(CURRENT_SCOPE_DEPENDENCY_NAME, new Object[]{});
+                return new UnregisterDependencyCommand((String) args[0], currentScope);
+            });
 
             Object[] args = new Object[1];
             args[0] = (IDependencyResolverStrategyUpdater) oldStrategy -> new IDependencyResolverStrategy() {
