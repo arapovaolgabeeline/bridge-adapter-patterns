@@ -28,9 +28,10 @@ import org.example.interfaces.IDependency;
 import org.example.ioc.IoC;
 
 public class GenerateAdapterCommand implements ICommand {
-    public static final String DEFAULT_ADAPTER_POSTFIX = "Adapter";
-    public static final String DEFAULT_PACKAGE_NAME = "org.example.generated.adapters";
-    public static final String DEFAULT_FOLDER = "target/generated-sources";
+    public static final String ADAPTER_POSTFIX = "Adapter";
+    public static final String ADAPTERS_PACKAGE_NAME = "org.example.generated.adapters";
+    public static final String GENERATED_CLASSES_DIRECTORY = "target/generated-sources";
+
     private final Class desiredInterface;
     private final Object object;
 
@@ -42,48 +43,38 @@ public class GenerateAdapterCommand implements ICommand {
     public static String createAdapterClassName(Class desiredInterface) {
         return desiredInterface.getSimpleName()
                 .substring(1)
-                .concat(DEFAULT_ADAPTER_POSTFIX);
+                .concat(ADAPTER_POSTFIX);
     }
 
     @Override
     public void execute() {
         String className = createAdapterClassName(desiredInterface);
-        TypeSpec generatedClass = constructAdapter(className);
-        File directory = persistAdapterAndRetunFolder(generatedClass);
+        TypeSpec adapterSpec = constructAdapter(className);
+        JavaFile adapter = JavaFile.builder(ADAPTERS_PACKAGE_NAME, adapterSpec).build();
+        File adapterDirectory = writeJavaFileToDiskAndReturnDirectory(adapter);
 
         ICommand resolve = IoC.resolve("IoC.Register", new Object[]{className, (IDependency) args -> {
                     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                    File file = new File(DEFAULT_FOLDER.toString(), "org/example/generated/adapters/" + className + ".java");
+                    File adapterFile = new File(GENERATED_CLASSES_DIRECTORY, generateAdapterFullname(className));
+                    compiler.run(null, null, null, adapterFile.getAbsolutePath());
 
-                    compiler.run(null, null, null, file.getAbsolutePath());
-
-                    URLClassLoader classLoader;
-
-                    try {
-                        classLoader = new URLClassLoader(new URL[]{directory.toURI().toURL()});
+                    try (URLClassLoader classLoader = new URLClassLoader(new URL[]{adapterDirectory.toURI().toURL()})) {
+                        Class<?> aClass = classLoader.loadClass(ADAPTERS_PACKAGE_NAME + "." + className);
+                        Constructor<?> declaredConstructor = aClass.getConstructor(Map.class);
+                        return declaredConstructor.newInstance(object);
                     } catch (MalformedURLException e) {
                         throw new RuntimeException(e);
-                    }
-                    Class<?> aClass;
-
-                    try {
-                        aClass = classLoader.loadClass(DEFAULT_PACKAGE_NAME + "." + className);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
-                    }
-                    Constructor<?> declaredConstructor;
-                    try {
-                        declaredConstructor = aClass.getConstructor(Map.class);
                     } catch (NoSuchMethodException e) {
                         throw new RuntimeException(e);
-                    }
-                    try {
-                        return declaredConstructor.newInstance(object);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
                     } catch (InstantiationException e) {
                         throw new RuntimeException(e);
                     } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    } catch (InvocationTargetException e) {
                         throw new RuntimeException(e);
                     }
                 }}
@@ -92,9 +83,15 @@ public class GenerateAdapterCommand implements ICommand {
         resolve.execute();
     }
 
-    private static File persistAdapterAndRetunFolder(TypeSpec generatedClass) {
-        JavaFile javaFile = JavaFile.builder(DEFAULT_PACKAGE_NAME, generatedClass)
-                .build();
+    private static String generateAdapterFullname(String className) {
+        return getAdaptersFolder() + className + ".java";
+    }
+
+    private static String getAdaptersFolder() {
+        return ADAPTERS_PACKAGE_NAME.replaceAll("\\.", "/") + "/";
+    }
+
+    private static File writeJavaFileToDiskAndReturnDirectory(JavaFile javaFile) {
         File directory = getDirectory();
         try {
             javaFile.writeTo(directory);
@@ -105,7 +102,7 @@ public class GenerateAdapterCommand implements ICommand {
     }
 
     private static File getDirectory() {
-        File directory = new File(DEFAULT_FOLDER);
+        File directory = new File(GENERATED_CLASSES_DIRECTORY);
         if (!directory.exists()) {
             directory.mkdir();
         }

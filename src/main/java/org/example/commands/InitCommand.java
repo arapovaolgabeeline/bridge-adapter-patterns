@@ -1,16 +1,16 @@
 package org.example.commands;
 
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.example.interfaces.ICommand;
 import org.example.interfaces.IDependency;
-import org.example.interfaces.IDependencyResolverStrategyUpdater;
 import org.example.interfaces.IDependencyResolverStrategy;
+import org.example.interfaces.IDependencyResolverStrategyUpdater;
 import org.example.ioc.IoC;
 import org.example.resolvers.DependencyResolver;
 
-import static org.example.commands.GenerateAdapterCommand.DEFAULT_ADAPTER_POSTFIX;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import static org.example.commands.GenerateAdapterCommand.createAdapterClassName;
 
 public class InitCommand implements ICommand {
@@ -29,8 +29,7 @@ public class InitCommand implements ICommand {
 
         synchronized (rootScope) {
             rootScope.put("Adapter", (Object[] args) -> {
-                GenerateAdapterCommand generateAdapterCommand = new GenerateAdapterCommand((Class) args[0], args[1]);
-                generateAdapterCommand.execute();
+                new GenerateAdapterCommand((Class) args[0], args[1]).execute();
                 return IoC.resolve(createAdapterClassName((Class) args[0]), new Object[]{});
             });
 
